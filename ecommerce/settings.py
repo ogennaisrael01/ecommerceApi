@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     "apps.accounts.apps.AccountsConfig",
+    'rest_framework_simplejwt.token_blacklist',
 ]
 
 MIDDLEWARE = [
@@ -149,3 +150,12 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME":timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME":timedelta(days=7)
 }
+
+
+# EMAIL CONFIGURATION
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_PORT = os.getenv("EMAIL_PORT")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")

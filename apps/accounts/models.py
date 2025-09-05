@@ -30,7 +30,7 @@ class CustomUser(AbstractUser):
 
     email = models.EmailField(unique=True, null=False, max_length=50)
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ["username"]
+    REQUIRED_FIELDS = ["username", "first_name", "last_name"]
     
     class Meta:
         verbose_name_plural = "users"
