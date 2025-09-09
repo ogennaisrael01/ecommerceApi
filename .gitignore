@@ -21,6 +21,7 @@ local_settings.py
 *.sqlite3
 media/
 staticfiles/
+db.sqlite3
 
 # Virtual environment
 bin/
