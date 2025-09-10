@@ -22,9 +22,9 @@ from drf_yasg import  openapi
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="My API",
+        title="Ecommerce API",
         default_version="v1",
-        description="API documentation for my travel app",
+        description="API documentation for my Ecommrce App",
         terms_of_service="https://www.example.com/terms/",
         contact=openapi.Contact(email="ogennaisrael98@gmail.com"),
         license=openapi.License(name="BSD License"),
@@ -36,6 +36,6 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("auth/", include("apps.accounts.urls")),
-    path("catalog", include("apps.core.urls")),
+    path("", include("apps.core.urls")),
     path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui')
 ]   

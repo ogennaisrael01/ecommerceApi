@@ -18,8 +18,8 @@ from rest_framework_simplejwt.views import TokenBlacklistView, TokenObtainPairVi
 
 router = DefaultRouter()
 
-router.register(r'profile', VendorProfileViewsets, basename="profile")
-router.register(r'vendor_profile', CustomerProfileViewsets, basename="vendor_profile")
+router.register(r'profile', CustomerProfileViewsets, basename="profile")
+router.register(r'vendor_profile', VendorProfileViewsets, basename="vendor_profile")
 router.register(r'delete', DeleteAccountView, basename="delete")
 
 urlpatterns = [
@@ -33,7 +33,8 @@ urlpatterns = [
     path("token/refresh/", TokenRefreshView.as_view(), name="refresh"),
     path("verify/email/", EmailVerificationView.as_view(), name="verify-email"),
     path("reset/password/", PasswordResetView.as_view(), name="reset-password"),
-    path("reset/password/complete/", PasswordConfirmView.as_view(), name="confirm-reset-password")
+    path("reset/password/complete/", PasswordConfirmView.as_view(), name="confirm-reset-password"),
+    path("", include("rest_framework.urls"))
 
 
 ]

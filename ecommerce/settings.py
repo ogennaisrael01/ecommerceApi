@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'phonenumber_field',
     "apps.accounts.apps.AccountsConfig",
     'rest_framework_simplejwt.token_blacklist',
-    'apps.core.apps.CoreConfig'
+    'apps.core.apps.CoreConfig',
+    'django_filters'
 ]
 
 MIDDLEWARE = [
@@ -146,14 +147,14 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ],
+# REST_FRAMEWORK = {
+#     "DEFAULT_AUTHENTICATION_CLASSES": [
+#         "rest_framework_simplejwt.authentication.JWTAuthentication",
+#     ],
 #     "DEFAULT_PERMISSION_CLASSES": [
 #         "rest_framework.permissions.IsAuthenticated",
-#     ],
-}
+# #     ],
+# }
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME":timedelta(minutes=15),

@@ -58,7 +58,7 @@ class VendorRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'confirm_password']
+        fields = ["id", 'email', 'password', 'confirm_password']
 
     def validate_password(self, value):
         _validate_password(value)
