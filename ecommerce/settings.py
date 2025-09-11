@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     "apps.accounts.apps.AccountsConfig",
     'rest_framework_simplejwt.token_blacklist',
     'apps.core.apps.CoreConfig',
-    'django_filters'
+    'django_filters',
+    'apps.cart.apps.CartConfig',
 ]
 
 MIDDLEWARE = [

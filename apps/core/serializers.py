@@ -23,3 +23,12 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = ["owner", "category", "name", "description", "slug", "stock", "price", "is_available", "image", "created_at"]
         read_only_fields = ["created_at", "slug", "owner"]
+    
+    def validate(self, attrs):
+        if attrs["price"] <= 0:
+            raise serializers.ValidationError({
+                "Error": "Product price can't be 0 or less than 0"
+            })
+        
+        return attrs
+    

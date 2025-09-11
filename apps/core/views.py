@@ -9,13 +9,14 @@ from apps.core.permissions import IsVendorOrAdmin, IsOwner
 
 class CategoryView(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
-    queryset = Category.objects.all()
     lookup_field = "slug"
 
     def get_queryset(self):
         category = self.request.query_params.get("category")
         if category:
             queryset = Product.objects.filter(category__name__icontains=category)
+        else:
+            return Category.objects.all()
         return queryset
 
 
@@ -45,10 +46,10 @@ class ProductView(viewsets.ModelViewSet):
         return [perm() for perm in permission_classes]
     
     def perform_create(self, serializer):
-        return serializer.save(owner=self.request.user)
+        serializer.save(owner=self.request.user)
     
     def perform_update(self, serializer):
-        return serializer.save(owner=self.request.user)
+        serializer.save(owner=self.request.user)
     
     def get_queryset(self):
         queryset = self.filter_queryset(super().get_queryset())
@@ -67,5 +68,4 @@ class ProductView(viewsets.ModelViewSet):
             queryset = queryset.filter(slug__icontains=slug)
         
         return queryset
-    
     
