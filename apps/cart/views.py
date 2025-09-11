@@ -35,15 +35,36 @@ class CartItemview(generics.GenericAPIView):
 
     def post(self, request, product_slug, cart_slug):
         "Add items to cart"
-        product = get_object_or_404(Product, slug=product_slug)
-        cart = get_object_or_404(Cart, slug=cart_slug)
+        try:
+            product = get_object_or_404(Product, slug=product_slug)
+            cart = get_object_or_404(Cart, slug=cart_slug)
 
+        except Product.DoesNotExist or Cart.DoesNotExist:
+            return Response({
+                "success": False,
+                "message": "Queryset do not exists"
+            }, status=status.HTTP_404_NOT_FOUND)
+        
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        quantity = serializer.validated_data.get("quantity", 1)
+
+        if product.stock < quantity:
+            return Response({
+                "message": "Not enough stock available",
+                'availabel': f"{product.stock}  stock available" 
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         queryset = self.filter_queryset(super().get_queryset())
         if queryset.filter(product__name__iexact=product.name):
             cartitem = queryset.get(cart__slug__iexact=cart.slug)
-            cartitem.quantity += serializer.validated_data.get("quantity")
+            cartitem.quantity += qnatity
+            if cartitem.quantity > product.stock:
+                    return Response({
+                        "message": "Not enough stock available",
+                        'availabel': f"{product.stock}  stock available" 
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
             cartitem.save()
         else:
             serializer.save(product=product, cart=cart)

@@ -10,11 +10,11 @@ class OrderItemsSerializer(serializers.ModelSerializer):
 
 
 class OrdersSerilaizer(serializers.ModelSerializer):
-    items = OrderItemsSerializer(many=True, read_only=True)
+    order_items = OrderItemsSerializer(many=True, read_only=True)
     owner = serializers.ReadOnlyField(source="owner.email")
     class Meta:
         model = Orders
-        fields = ["id", "owner", "status", "created_at", "slug", "total_price", "items"]
+        fields = ["id", "owner", "status", "created_at", "slug", "total_price", "order_items"]
 
 class CreateOrderSerlializer(serializers.Serializer):
     slug = serializers.SlugField(max_length=50)

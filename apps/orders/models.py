@@ -20,12 +20,12 @@ class Orders(models.Model):
 
     @property
     def total_price(self):
-        total_price = sum(next(item.quantity * item.product.price for item in self.order_items.all()))
+        total_price = sum([item.quantity * item.product.price for item in self.order_items.all()])
         return total_price
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.status)
+            self.slug = slugify(f"{self.owner.email}-{timezone.now()}")
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -45,7 +45,7 @@ class OrderItems(models.Model):
 
     def save(self, *args, **kwargs):
         if not  self.slug:
-            self.slug = slugify(self.product.name)
+            self.slug = slugify(f"{self.product.name} - {timezone.now()}")
         super().save(*args, **kwargs)
 
     def __str__(self):
