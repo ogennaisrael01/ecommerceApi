@@ -53,3 +53,5 @@ class CheckOutViewSet(viewsets.GenericViewSet):
             "orders": orders.id
         }, status=status.HTTP_200_OK)
     
+
+class OrderDetailsVeiw()
