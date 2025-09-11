@@ -75,6 +75,7 @@ class VendorRegistrationView(RegistrationView):
 class CustomerProfileUpdate(generics.UpdateAPIView):
     serializer_class = CustomerProfileSerializer
     queryset = CustomerProfile.objects.all()
+    lookup_field = 'slug'
 
     def perform_update(self, serializer):
         if self.request.user == self.get_object().user:
@@ -213,18 +214,22 @@ class CustomerProfileViewsets(mixins.ListModelMixin, mixins.RetrieveModelMixin, 
     """ 
         - A base class for listing and retrieving users profile
         - admins can list user profiles
-        - Users can only retrieve each others profiles but can't perform any action it.
+        - Users can retrieve each others profiles but can't perform any action it.
         - only the owner of the profile can perform action on it
     """
     serializer_class = CustomerProfileSerializer
     queryset = CustomerProfile.objects.all()
-    permission_classes = [permissions.AllowAny]
+    lookup_field = 'slug'
+    def get_permissions(self):
+        if self.action == "list":
+            permission_classes = [permissions.IsAdminUser]
+        else:
+            permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+        return [perm() for perm in permission_classes]
 
     def list(self, request, *args, **kwargs):
-         if request.user.is_staff:
             queryset = self.filter_queryset(self.get_queryset())
-
-            if queryset:
+            if queryset and request.user.is_staff:
                  serializer = self.get_serializer(queryset, many=True)
                  return response(serializer.data)
             return Response({
@@ -237,7 +242,7 @@ class VendorProfileViewsets(CustomerProfileViewsets):
 
 class DeleteAccountView(mixins.DestroyModelMixin, viewsets.GenericViewSet):
     queryset = User.objects.all()
-
+    lookup_field = 'slug'
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         if instance.email == request.user.email:

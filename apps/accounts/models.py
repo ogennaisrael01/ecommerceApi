@@ -4,6 +4,7 @@ from django_countries.fields import CountryField
 from phonenumber_field.modelfields import PhoneNumberField
 from django.utils import timezone
 from django.utils.timezone import timedelta
+from django.utils.text import slugify
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password, **kwargs):
@@ -73,6 +74,7 @@ class VendorProfile(models.Model):
     is_verified = models.BooleanField(default=False)  # mark verified vendors
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    slug = models.SlugField(max_length=50)
 
     def __str__(self):
         return f"Store: {self.shop_name}. Owner: {self.user.email}" 
@@ -84,6 +86,11 @@ class VendorProfile(models.Model):
     @property    
     def get_full_name(self):
         return self.user.get_full_name()
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.user.user)
+        super().save(*args, **kwargs)
     
 class CustomerProfile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="profile")
@@ -101,7 +108,13 @@ class CustomerProfile(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    slug = models.SlugField(max_length=50)
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.user.username)
+        super().save(*args, **kwargs)
+        
     @property
     def full_name(self): 
         return self.user.get_full_name()

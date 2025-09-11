@@ -37,7 +37,7 @@ class CartItem(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.cart)
+            self.slug = slugify(self.product.name)
         super().save(*args, **kwargs)
     
 

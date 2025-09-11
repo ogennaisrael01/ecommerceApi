@@ -8,15 +8,19 @@ from django.shortcuts import get_object_or_404
 from apps.core.models import Product
 
 
-class CartView(mixins.ListModelMixin, viewsets.GenericViewSet):
+class CartView(viewsets.GenericViewSet):
     serializer_class = CartSerializer
     queryset = Cart.objects.all()
 
 
-    @action(methods=["get"], detail=False, url_path="carts")
-    def get_carts(self, request, *args, **kwargs):
+    @action(methods=["get"], detail=False, url_path="cart_items")
+    def carts_items(self, request, *args, **kwargs):
         """" A queryset to retreive all carts items which belong to that authenticated user."""
-
+        if request.user.is_anonymous:
+            return Response({
+                "success": False,
+                "message": "You need to be logged in to view your carts"
+            }, status=status.HTTP_401_UNAUTHORIZED)
         queryset = self.filter_queryset(super().get_queryset())
         if queryset:
             queryset = queryset.filter(owner=request.user).all()
@@ -30,6 +34,7 @@ class CartItemview(generics.GenericAPIView):
     lookup_field = "slug"
 
     def post(self, request, product_slug, cart_slug):
+        "Add items to cart"
         product = get_object_or_404(Product, slug=product_slug)
         cart = get_object_or_404(Cart, slug=cart_slug)
 
@@ -64,9 +69,15 @@ class CartManagementView(generics.RetrieveUpdateDestroyAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         queryset = super().get_queryset()
-        queryset = queryset.get(product=product)
-        queryset.quantity = serializer.validated_data.get("quantity")
-        queryset.save()
+        instance = queryset.get(product=product)
+
+        if instance.cart.owner != request.user:
+            return Response({
+                'success': False,
+                "message": "You don't have permission to perform this action"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        instance.quantity = serializer.validated_data.get("quantity")
+        instance.save()
         return Response({
             "Mesage": "Cart item quantity updated",
             "Data": serializer.data
@@ -75,7 +86,18 @@ class CartManagementView(generics.RetrieveUpdateDestroyAPIView):
     
     def destroy(self, request, slug):
         product = get_object_or_404(Product, slug=slug) 
+        if not product:
+            return Response({
+                "success": False,
+                "message": "product is missing"
+            }, status=status.HTTP_400_BAD_REQUEST)
         queryset = super().get_queryset()
         instance = queryset.get(product=product)
+        if instance.cart.owner != request.user:
+            return Response({
+                'success': False,
+                'message': "You don't have access to perform this action"
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)

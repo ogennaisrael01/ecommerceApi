@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'apps.core.apps.CoreConfig',
     'django_filters',
     'apps.cart.apps.CartConfig',
+    'apps.orders.apps.OrdersConfig'
 ]
 
 MIDDLEWARE = [
