@@ -43,7 +43,7 @@ class RegistrationView(generics.CreateAPIView):
             )
         
         
-        otp_code = OTP.objects.get(email=email)
+        otp_code = OTP.objects.filter(email=email).first()
         if otp_code:
             send_notification_email(
                 subject="Registration success",

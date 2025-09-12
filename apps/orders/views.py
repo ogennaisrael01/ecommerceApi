@@ -1,11 +1,11 @@
 from django.shortcuts import render
-from rest_framework import viewsets, status, mixins
+from rest_framework import viewsets, status, mixins, permissions
 from rest_framework.decorators import action
 from apps.cart.models import CartItem, Cart
 from rest_framework.response import Response
 from apps.orders.models import OrderItems, Orders
 from apps.orders.serializers import CreateOrderSerlializer, OrdersSerilaizer, OrderItemsSerializer
-
+from rest_framework.exceptions import PermissionDenied
 
 class CheckOutViewSet(viewsets.GenericViewSet):
     serializer_class = CreateOrderSerlializer
@@ -54,7 +54,7 @@ class CheckOutViewSet(viewsets.GenericViewSet):
         }, status=status.HTTP_200_OK)
     
 
-class OrderDetailsVeiw(mixins.ListModelMixin, viewsets.GenericViewSet):
+class OrderDetailsVeiw( viewsets.GenericViewSet):
     """" A Details view for :
         - View order histories
         - Track order by their ID
@@ -62,9 +62,11 @@ class OrderDetailsVeiw(mixins.ListModelMixin, viewsets.GenericViewSet):
     """
     serializer_class = OrdersSerilaizer
     queryset = Orders.objects.all()
-    lookup_field ="slug"
+    lookup_field = "slug"
+    permission_classes = [permissions.AllowAny]
 
-    def get_queryset(self):
+    @action(methods=["get"], detail=False, url_path="all")
+    def all_orders(self, request):
         """" 
         - Admin privilage to list all order histories
         - Enables item filtering using query params (customer name, status, date)
@@ -73,20 +75,19 @@ class OrderDetailsVeiw(mixins.ListModelMixin, viewsets.GenericViewSet):
         status = self.request.query_params.get("status")
         date = self.request.query_params.get("date")
         queryset = Orders.objects.all()
-        if not self.request.user.is_staff:
+        if not request.user.is_staff:
             return Response({
-                "success": False,
                 "message": "Not Allowed to perform this action"
             })
-        elif customer:
+        if customer:
             queryset = queryset.filter(owner__email__icontains=customer)
-        elif status:
+        if status:
             queryset = queryset.filter(status__icontains=status)
-        elif date:
+        if date:
             queryset = queryset.filter(ordered_on__icontains=date)
-        else:
-            queryset = queryset
-        return queryset
+        print("Hoells")
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
     
     @action(methods=["get"], detail=False, url_path="my_orders")
     def orders(self, request, *args, **kwargs):
@@ -135,7 +136,7 @@ class OrderDetailsVeiw(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     @action(methods=['post'], detail=True, url_path="cancel")
     def cancel_order(self, request, slug=None):
-        order = self.get_object()
+        order = Orders.objects.filter(slug=slug).first()
 
         if order.owner != request.user:
             return Response({

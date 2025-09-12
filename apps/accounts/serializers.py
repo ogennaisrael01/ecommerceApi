@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from apps.accounts.models import VendorProfile, CustomerProfile
 from django.contrib.auth.password_validation import validate_password as _validate_password
+from django.utils.text import slugify
 
 User = get_user_model()
 
@@ -79,9 +80,10 @@ class VendorRegistrationSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(
             email=validated_data["email"],
             password=validated_data["password"],
+            username=slugify(validated_data["email"].split("@")[0]),
             role="Vendor"
         )
-        VendorProfile.objects.create(user=user)
+        # VendorProfile.objects.create(user=user)
         return user
     
 class CustomerProfileSerializer(serializers.ModelSerializer):
