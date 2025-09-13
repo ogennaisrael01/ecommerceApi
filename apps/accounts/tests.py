@@ -60,3 +60,5 @@ class UserManagementTestCase(APITestCase):
     def test_email_verificatil(self):
         response = self.client.post(self.verification_url, self.verification_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    

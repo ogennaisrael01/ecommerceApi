@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'django_filters',
     'apps.cart.apps.CartConfig',
     'apps.orders.apps.OrdersConfig',
+    'apps.notifications.apps.NotificationsConfig'
 ]
 
 MIDDLEWARE = [

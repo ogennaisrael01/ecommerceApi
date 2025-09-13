@@ -39,5 +39,6 @@ urlpatterns = [
     path("", include("apps.core.urls")),
     path("", include("apps.cart.urls")),
     path('', include("apps.orders.urls")),
+    path('', include("apps.notifications.urls")),
     path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui')
 ]   

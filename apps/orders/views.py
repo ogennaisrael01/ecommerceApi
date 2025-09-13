@@ -74,7 +74,7 @@ class OrderDetailsVeiw( viewsets.GenericViewSet):
         customer = self.request.query_params.get("customer")
         status = self.request.query_params.get("status")
         date = self.request.query_params.get("date")
-        queryset = Orders.objects.all()
+        queryset = self.filter_queryset(super().get_queryset())
         if not request.user.is_staff:
             return Response({
                 "message": "Not Allowed to perform this action"
@@ -85,7 +85,7 @@ class OrderDetailsVeiw( viewsets.GenericViewSet):
             queryset = queryset.filter(status__icontains=status)
         if date:
             queryset = queryset.filter(ordered_on__icontains=date)
-        print("Hoells")
+
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
@@ -95,7 +95,8 @@ class OrderDetailsVeiw( viewsets.GenericViewSet):
             - A method to view the login user orders if any else none
         """
         user = request.user
-        queryset = Orders.objects.filter(owner=user).all().order_by("-created_at")[:10]
+        queryset = self.filter_queryset(super().get_queryset())
+        queryset = queryset.filter(owner=user).all().order_by("-created_at")[:10]
         if not queryset.exists():
             return Response({
                 "success": False, 
