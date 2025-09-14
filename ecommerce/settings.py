@@ -14,6 +14,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
 import os
+from decouple import config
 
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -26,12 +27,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
 
+PAYSTACK_SECRET_KEY = config("PAYSTACK_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG")
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
-
+CSRF_TRUSTED_ORIGINS = [
+    "https://d6362340f032.ngrok-free.app",  # add your ngrok domain
+]
 # Application definition
 
 INSTALLED_APPS = [
@@ -51,7 +55,8 @@ INSTALLED_APPS = [
     'django_filters',
     'apps.cart.apps.CartConfig',
     'apps.orders.apps.OrdersConfig',
-    'apps.notifications.apps.NotificationsConfig'
+    'apps.notifications.apps.NotificationsConfig',
+    'apps.payments.apps.PaymentsConfig',
 ]
 
 MIDDLEWARE = [
@@ -150,14 +155,14 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ],
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
-    ],
-}
+# REST_FRAMEWORK = {
+#     "DEFAULT_AUTHENTICATION_CLASSES": [
+#         "rest_framework_simplejwt.authentication.JWTAuthentication",
+#     ],
+    # "DEFAULT_PERMISSION_CLASSES": [
+    #     "rest_framework.permissions.IsAuthenticated",
+    # ],
+# }
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME":timedelta(minutes=15),
