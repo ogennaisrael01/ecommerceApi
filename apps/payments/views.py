@@ -2,8 +2,8 @@
 
 import uuid
 from apps.payments.paystack import check_out
-from rest_framework import viewsets, status
-from apps.payments.serializers import PaymentSerializer
+from rest_framework import viewsets, status, mixins
+from apps.payments.serializers import PaymentSerializer, PaymentOutputSerializer
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404, redirect
 from apps.orders.models import Orders
@@ -97,7 +97,7 @@ class PaymentViewSet(viewsets.GenericViewSet):
         if hash_ != request.META.get("HTTP_X_PAYSTACK_SIGNATURE"):
             return Response({
                 "success": False,
-                "message": "Invalid Paystack signature."
+                "message": "Invalid Paystack ID."
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -131,5 +131,47 @@ class PaymentViewSet(viewsets.GenericViewSet):
             "success": True,
         }, status=status.HTTP_200_OK)
 
+class PaymentDetailViewSet(viewsets.GenericViewSet,
+                            mixins.ListModelMixin,
+                            mixins.DestroyModelMixin,
+                            mixins.RetrieveModelMixin):
+    serializer_class = PaymentOutputSerializer
+    queryset = Payments.objects.all()
+    lookup_field = "slug"
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(super().get_queryset())
+        payments = queryset.filter(email=request.user.email)
+        if payments:
+            serializer = self.get_serializer(payments, many=True)
+            return Response(serializer.data)
+        return Response({
+            "success": False,
+            'message': "No Payments made"
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    def destroy(self, request, *args, **kwargs):
+        payment = self.get_object()
+        if payment.email == request.user.email:
+            payment.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    def retrieve(self, request, *args, **kwargs):
+        payment = self.get_object()
+        queryset = self.filter_queryset(super().get_queryset())
+        if payment.email == request.user.email:
+            queryset = queryset.filter(email=request.user.email)
+            serializer = self.get_serializer(payment)
+            return Response(serializer.data)
+        return Response(status=status.HTTP_404_NOT_FOUND)
+        
+
+
+        
+
+    
+
+
+    
 
