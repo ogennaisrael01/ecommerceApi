@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from apps.orders.models import OrderItems, Orders
 from apps.orders.serializers import CreateOrderSerlializer, OrdersSerilaizer, OrderItemsSerializer
 from rest_framework.exceptions import PermissionDenied
+from apps.notifications.utils import send_notification
 
 class CheckOutViewSet(viewsets.GenericViewSet):
     serializer_class = CreateOrderSerlializer
@@ -47,12 +48,19 @@ class CheckOutViewSet(viewsets.GenericViewSet):
             )
         # Once checked out we will have to delete the cart list
         cart.delete()
-        return Response({
-            "success": True,
-            'Message': "Orders created",
-            "orders": orders.id
-        }, status=status.HTTP_200_OK)
-    
+        notification = send_notification(
+            user=request.user,
+            message="Cart check out succeccfully, you can now proceed to payment"
+        )
+        if notification.get("success"):
+
+            return Response({
+                "success": True,
+                'Message': notification.get("message"),
+                "orders": orders.id
+            }, status=status.HTTP_200_OK)
+
+        return Response(notification.get("message"))
 
 class OrderDetailsVeiw( viewsets.GenericViewSet):
     """" A Details view for :
