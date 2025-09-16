@@ -3,10 +3,11 @@
 import uuid
 from apps.payments.paystack import check_out
 from rest_framework import viewsets, status, mixins
-from apps.payments.serializers import PaymentSerializer, PaymentOutputSerializer
+from apps.payments.serializers import PaymentOutputSerializer
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404, redirect
-from apps.orders.models import Orders
+from apps.orders.models import Orders, OrderItems
+from apps.core.models import Product
 from rest_framework.response import Response
 import hmac
 import hashlib
@@ -21,21 +22,12 @@ def get_reference():
 
 
 class PaymentViewSet(viewsets.GenericViewSet):
-    serializer_class = PaymentSerializer
-    lookup_field = 'slug'
+    lookup_field = "slug"
 
     @action(methods=["post"], detail=True)
     def initialize_payment(self, request, slug=None):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        email = serializer.validated_data.get("email")
 
         order = get_object_or_404(Orders, slug=slug)
-        if order.owner.email != email:
-            return Response({
-                "success": False,
-                "message": "The provided email does not match the order owner's email."
-            }, status=status.HTTP_400_BAD_REQUEST)
 
         if request.user != order.owner:
             return Response({
@@ -55,12 +47,12 @@ class PaymentViewSet(viewsets.GenericViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         amount = order.total_price * 100
-        reference = f"payment_id_{paget_reference()}"
+        reference = f"payment_id_{get_reference()}"
 
-        payment = serializer.save(user=request.user, amount=int(amount), reference=reference)
+        payment = Payments.objects.create(user=request.user, amount=int(amount), reference=reference, orders=order)
 
         checkout_data = {
-            "email": payment.email,
+            "email": order.owner.email,
             "amount": payment.amount,
             "currency": "NGN",
             "channels": ["card", "bank_transfer", "bank", "ussd", "qr", "mobile_money"],
@@ -117,9 +109,15 @@ class PaymentViewSet(viewsets.GenericViewSet):
                 "message": "Missing payment reference data"
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        payment = get_object_or_404(Payments, reference=reference_id)
 
+        payment = get_object_or_404(Payments, reference=reference_id)
+        orders = Orders.objects.prefetch_related("payments")
+        print(orders)
+        orderitems = OrderItems.objects.filter(order=orders)
         if event == "charge.success":
+            # update both product stock and payment status
+            for item in orderitems:
+                print(item)
             payment.status = "Completed"
             payment.paid_at = timezone.now()
             payment.save()

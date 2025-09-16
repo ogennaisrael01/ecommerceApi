@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
 from django.utils import timezone
+from apps.orders.models import Orders
 
 User = settings.AUTH_USER_MODEL
 
@@ -13,7 +14,7 @@ class Payments(models.Model):
         ("Failed", "Failed")
     ]
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="payments")
-    email = models.EmailField(max_length=200)
+    orders  = models.ForeignKey(Orders, on_delete=models.CASCADE, related_name="payments")
     amount = models.PositiveIntegerField()
     reference = models.CharField(max_length=30, unique=True)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default="Pending")
