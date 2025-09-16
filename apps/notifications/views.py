@@ -22,7 +22,7 @@ class NotificationViewSet(viewsets.GenericViewSet,
                 "success":False,
                 "message": "No Notifications found"
             }, status=status.HTTP_404_NOT_FOUND)
-        serializer = self.get_serializer(notifications)
+        serializer = self.get_serializer(notifications, many=True)
         return Response(serializer.data)
     
     def retrieve(self, request, *args, **kwargs):
@@ -32,6 +32,7 @@ class NotificationViewSet(viewsets.GenericViewSet,
         if object.owner == request.user:
             queryset = self.filter_queryset(super().get_queryset())
             object.is_read = True
-            serializer = self.get_serializer(queryset)
+            object.save()
+            serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data)
         return Response(status=status.HTTP_404_NOT_FOUND)

@@ -1,11 +1,12 @@
 from django.shortcuts import render
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from apps.core.serializers import CategorySerializer, ProductSerializer
 from rest_framework.response import Response
 from apps.core.models import Category, Product
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from apps.core.permissions import IsVendorOrAdmin, IsOwner
+from apps.notifications.utils import send_notification
 
 class CategoryView(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
@@ -47,6 +48,11 @@ class ProductView(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+        notification = send_notification(user=self.request.user,
+                                        message=f"New product added: {serializer.data["name"]}")
+        if notification.get("success"):
+            return Response(notification.get("message"), status=status.HTTP_201_CREATED)
+        return Response(notification.get("message"), status=status.HTTP_400_BAD_REQUEST)
     
     def perform_update(self, serializer):
         serializer.save(owner=self.request.user)
