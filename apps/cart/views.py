@@ -58,7 +58,7 @@ class CartItemview(generics.GenericAPIView):
         queryset = self.filter_queryset(super().get_queryset())
         if queryset.filter(product__name__iexact=product.name):
             cartitem = queryset.get(cart__slug__iexact=cart.slug)
-            cartitem.quantity += qnatity
+            cartitem.quantity += quantity
             if cartitem.quantity > product.stock:
                     return Response({
                         "message": "Not enough stock available",

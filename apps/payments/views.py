@@ -3,7 +3,7 @@
 import uuid
 from apps.payments.paystack import check_out
 from rest_framework import viewsets, status, mixins
-from apps.payments.serializers import PaymentOutputSerializer
+from apps.payments.serializers import PaymentOutputSerializer, PaymentSerializer
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404, redirect
 from apps.orders.models import Orders, OrderItems
@@ -22,12 +22,21 @@ def get_reference():
 
 
 class PaymentViewSet(viewsets.GenericViewSet):
-    lookup_field = "slug"
+    serializer_class = PaymentSerializer
+    lookup_field = 'slug'
 
     @action(methods=["post"], detail=True)
     def initialize_payment(self, request, slug=None):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data.get("email")
 
         order = get_object_or_404(Orders, slug=slug)
+        if order.owner.email != email:
+            return Response({
+                "success": False,
+                "message": "The provided email does not match the order owner's email."
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         if request.user != order.owner:
             return Response({
@@ -47,12 +56,13 @@ class PaymentViewSet(viewsets.GenericViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         amount = order.total_price * 100
-        reference = f"payment_id_{get_reference()}"
+        print(amount)
+        reference = get_reference()
 
         payment = Payments.objects.create(user=request.user, amount=int(amount), reference=reference, orders=order)
 
         checkout_data = {
-            "email": order.owner.email,
+            "email": payment.user.email,
             "amount": payment.amount,
             "currency": "NGN",
             "channels": ["card", "bank_transfer", "bank", "ussd", "qr", "mobile_money"],
@@ -69,11 +79,8 @@ class PaymentViewSet(viewsets.GenericViewSet):
         order.status = "Completed"
         order.save()
         checkout_status = check_out(checkout_data)
-        if checkout_status:
-            return Response({
-                "success": True,
-                "message": checkout_status.get("message", "Checkout successful.")
-            }, status=status.HTTP_200_OK)
+        if checkout_status.get("success"):
+            return redirect(checkout_status.get("message"))
         else:
             return Response({
                 "success": False,
@@ -85,8 +92,8 @@ class PaymentViewSet(viewsets.GenericViewSet):
         secret = settings.PAYSTACK_SECRET_KEY
         request_body = request.body
 
-        hash_ = hmac.new(secret.encode("utf-8"), request_body, hashlib.sha512).hexdigest()
-        if hash_ != request.META.get("HTTP_X_PAYSTACK_SIGNATURE"):
+        hash = hmac.new(secret.encode("utf-8"), request_body, hashlib.sha512).hexdigest()
+        if hash != request.META.get("HTTP_X_PAYSTACK_SIGNATURE"):
             return Response({
                 "success": False,
                 "message": "Invalid Paystack ID."
@@ -110,14 +117,24 @@ class PaymentViewSet(viewsets.GenericViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
-        payment = get_object_or_404(Payments, reference=reference_id)
-        orders = Orders.objects.prefetch_related("payments")
-        print(orders)
-        orderitems = OrderItems.objects.filter(order=orders)
+        payments = get_object_or_404(Payments, reference=reference_id)
+
         if event == "charge.success":
             # update both product stock and payment status
-            for item in orderitems:
-                print(item)
+            """
+                - Lets retrieve the product from product orders and update the stock accordingly
+            """
+            for payment in payments:
+                try:
+                    order = payment.orders.order_items.all()
+                except Exception as e:
+                    return Response(e)
+                for item in order:
+                    stock = item.product.stock
+                    # Update the number of stock by decreasing with the quantity purchased
+                    stock -= item.quantity
+                    item.product.save()
+
             payment.status = "Completed"
             payment.paid_at = timezone.now()
             payment.save()
@@ -139,7 +156,7 @@ class PaymentDetailViewSet(viewsets.GenericViewSet,
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(super().get_queryset())
-        payments = queryset.filter(email=request.user.email)
+        payments = queryset.filter(user__email=request.user.email)
         if payments:
             serializer = self.get_serializer(payments, many=True)
             return Response(serializer.data)
@@ -150,7 +167,7 @@ class PaymentDetailViewSet(viewsets.GenericViewSet,
     
     def destroy(self, request, *args, **kwargs):
         payment = self.get_object()
-        if payment.email == request.user.email:
+        if payment.user.email == request.user.email:
             payment.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_404_NOT_FOUND)
@@ -158,8 +175,8 @@ class PaymentDetailViewSet(viewsets.GenericViewSet,
     def retrieve(self, request, *args, **kwargs):
         payment = self.get_object()
         queryset = self.filter_queryset(super().get_queryset())
-        if payment.email == request.user.email:
-            queryset = queryset.filter(email=request.user.email)
+        if payment.user.email == request.user.email:
+            queryset = queryset.filter(user__email=request.user.email)
             serializer = self.get_serializer(payment)
             return Response(serializer.data)
         return Response(status=status.HTTP_404_NOT_FOUND)

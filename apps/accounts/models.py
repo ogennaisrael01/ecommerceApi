@@ -20,7 +20,7 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
     
-    def create__superuser(self, email, password, **kwargs):
+    def create_superuser(self, email, password, **kwargs):
         """Create and return a user with admin access"""
         user = self.create_user(email=email, password=password, **kwargs)
         user.is_admin = True
