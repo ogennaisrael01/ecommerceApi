@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.core.models import Category, Product
-
+from apps.ratings.serializers import ProductReviewSerializer
 
 class CategorySerializer(serializers.ModelSerializer):
 
@@ -19,10 +19,11 @@ class CategorySerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source="owner.email")
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
+    reviews = ProductReviewSerializer(many=True)
     class Meta:
         model = Product
-        fields = ["owner", "category", "name", "description", "slug", "stock", "price", "is_available", "image", "created_at"]
-        read_only_fields = ["created_at", "slug", "owner"]
+        fields = ["owner", "category", "name", "description", "slug", "stock", "price", "is_available", "image", "created_at", "reviews"]
+        read_only_fields = ["created_at", "slug", "owner", "is_available"]
     
     def validate(self, attrs):
         if attrs["price"] <= 0:

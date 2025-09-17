@@ -57,7 +57,7 @@ class PaymentViewSet(viewsets.GenericViewSet):
 
         amount = order.total_price * 100
         print(amount)
-        reference = get_reference()
+        reference = f"payment_id_{get_reference()}"
 
         payment = Payments.objects.create(user=request.user, amount=int(amount), reference=reference, orders=order)
 

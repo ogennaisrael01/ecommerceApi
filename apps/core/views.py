@@ -7,6 +7,7 @@ from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from apps.core.permissions import IsVendorOrAdmin, IsOwner
 from apps.notifications.utils import send_notification
+from django.db.models import Q
 
 class CategoryView(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
@@ -47,9 +48,14 @@ class ProductView(viewsets.ModelViewSet):
         return [perm() for perm in permission_classes]
     
     def perform_create(self, serializer):
+        stock = serializer.validated_data["stock"]
+        if stock > 0:
+            serializer.validated_data["is_available"] = True
+        else:
+            serializer.validated_data["is_available"] = False
         serializer.save(owner=self.request.user)
         notification = send_notification(user=self.request.user,
-                                        message=f"New product added: {serializer.data["name"]}")
+                                        message=f"New product added: {serializer.data['name']}")
         if notification.get("success"):
             return Response(notification.get("message"), status=status.HTTP_201_CREATED)
         return Response(notification.get("message"), status=status.HTTP_400_BAD_REQUEST)
@@ -59,19 +65,12 @@ class ProductView(viewsets.ModelViewSet):
     
     def get_queryset(self):
         queryset = self.filter_queryset(super().get_queryset())
-        category = self.request.query_params.get("category")
-        product = self.request.query_params.get("name")
-        owner = self.request.query_params.get("owner")
-        slug = self.request.query_params.get("slug")
-
-        if category:
-            queryset = queryset.filter(category__name__icontains=category)
-        if product:
-            queryset = queryset.filter(name__icontains=product)
-        if owner:
-            queryset = queryset.filter(owner__email__icontains=owner)
-        if slug:
-            queryset = queryset.filter(slug__icontains=slug)
-        
+        parameter = self.request.query_params.get("q", None)
+        if parameter:
+            queryset = queryset.filter(
+                Q(category__name__icontains=parameter)|
+                Q(name__icontains=parameter)|
+                Q(price__icontains=parameter)|
+                Q(slug__icontains=parameter)
+            )
         return queryset
-    

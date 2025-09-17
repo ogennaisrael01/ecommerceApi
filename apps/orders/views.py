@@ -7,6 +7,7 @@ from apps.orders.models import OrderItems, Orders
 from apps.orders.serializers import CreateOrderSerlializer, OrdersSerilaizer, OrderItemsSerializer
 from rest_framework.exceptions import PermissionDenied
 from apps.notifications.utils import send_notification
+from django.db.models import Q
 
 class CheckOutViewSet(viewsets.GenericViewSet):
     serializer_class = CreateOrderSerlializer
@@ -79,21 +80,19 @@ class OrderDetailsVeiw( viewsets.GenericViewSet):
         - Admin privilage to list all order histories
         - Enables item filtering using query params (customer name, status, date)
         """
-        customer = self.request.query_params.get("customer")
-        status = self.request.query_params.get("status")
-        date = self.request.query_params.get("date")
+        query_parms = self.request.query_params.get("q", None)
+        
         queryset = self.filter_queryset(super().get_queryset())
         if not request.user.is_staff:
             return Response({
                 "message": "Not Allowed to perform this action"
             })
-        if customer:
-            queryset = queryset.filter(owner__email__icontains=customer)
-        if status:
-            queryset = queryset.filter(status__icontains=status)
-        if date:
-            queryset = queryset.filter(ordered_on__icontains=date)
-
+        if query_parms:
+            queryset = queryset.filter(
+                Q(owner__email__icontains=query_parms)|
+                Q(status__icontains=query_parms)|
+                Q(ordered_on__icontains=query_parms)
+            )
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
@@ -118,8 +117,8 @@ class OrderDetailsVeiw( viewsets.GenericViewSet):
         """"
             - A Method to track a specific order by their id or slug using query parameters
         """
-        id = request.query_params.get("id")
-        slug = request.query_params.get("slug")
+        parameters = request.query_params.get("q", None)
+        
 
         user = request.user
         queryset = OrderItems.objects.all()
@@ -134,12 +133,13 @@ class OrderDetailsVeiw( viewsets.GenericViewSet):
                 'message': "You dont have access to perform to this view"
             }, status=status.HTTP_403_FORBIDDEN)
         
-        elif id:
-            queryset = queryset.filter(id=id).first()
-        elif slug:
-            queryset = queryset.filter(slug=slug).first()
+        elif parameters:
+            queryset = queryset.filter(
+                Q(id__iexact=parameters)|
+                Q(slug__icontains=parameters)
+            ).first()
         else:
-            return Response({"message": "A field ID or slug is required"})
+            return Response({"message": "A field is required"})
         serializer = OrderItemsSerializer(queryset)
         return Response(serializer.data)
 

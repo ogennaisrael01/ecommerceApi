@@ -15,6 +15,11 @@ def test_payment():
     for pay in payments:
         product = pay.orders.order_items.all()
         for item in product:
+            stock = item.product.stock
+            stock = 0
+            item.product.stock = stock
+            item.product.save()
+            print(stock)
             print(item.product.stock)
 if __name__ == "__main__":
     test_payment()
