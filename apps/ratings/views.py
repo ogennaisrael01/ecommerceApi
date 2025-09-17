@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from rest_framework import viewsets
+from rest_framework import viewsets, generics, status
 from apps.ratings.models import ProductReview
 from apps.ratings.serializers import ProductReviewSerializer
 from django.shortcuts import get_object_or_404
@@ -18,7 +18,10 @@ class ReviewViewSets(viewsets.GenericViewSet):
         reviews = product.reviews.all()
         for review in reviews:
             if review.user ==  request.user:
-                return Response({"message": "You added a review already"})
+                return Response({
+                    'success': True,
+                    "message": "You have added a review already"},
+                      status=status.HTTP_201_CREATED)
 
 
          # Product owner can't actually add a review to their own product
@@ -41,3 +44,33 @@ class ReviewViewSets(viewsets.GenericViewSet):
                 "message": "Review added successfully"
             }
         )
+    
+    @action(methods=["get"], detail=True)
+    def list_reviews(self, request, slug):
+        product = get_object_or_404(Product, slug=slug)
+        reviews = product.reviews.all()[:10]
+        if not reviews:
+            return Response("[]")
+        serializer = self.get_serializer(reviews, many=True)
+        return Response(serializer.data)
+    
+class ReviewRetrieveDeleteUpdateView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = ProductReviewSerializer
+    queryset = ProductReview.objects.all()
+
+    def perform_update(self, serializer):
+        user = serializer.data.get("user")
+        if self.request.user == user:
+            serializer.save()
+            return Response(
+                {
+                    "success": True,
+                    "message": "Review updated"
+                }, status=status.HTTP_200_OK
+            )
+    
+    def perform_destroy(self, instance):
+        if instance.user == self.request.user:
+            self.perform_destroy(instance)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        
