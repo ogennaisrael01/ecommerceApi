@@ -7,7 +7,7 @@ from apps.core.views import (
 
 router = DefaultRouter()
 router.register(r'category', CategoryView, basename="category")
-router.register(r'product', ProductView, basename="products")
+router.register(r'products', ProductView, basename="products")
 urlpatterns = [
     path("", include(router.urls))
 ]

@@ -72,7 +72,7 @@ class OrderDetailsVeiw( viewsets.GenericViewSet):
     serializer_class = OrdersSerilaizer
     queryset = Orders.objects.all()
     lookup_field = "slug"
-    permission_classes = [permissions.AllowAny]
+    # permission_classes = [permissions.AllowAny]
 
     @action(methods=["get"], detail=False, url_path="all")
     def all_orders(self, request):
@@ -117,7 +117,7 @@ class OrderDetailsVeiw( viewsets.GenericViewSet):
         """"
             - A Method to track a specific order by their id or slug using query parameters
         """
-        parameters = request.query_params.get("q", None)
+        query_params = request.query_params.get("q", None)
         
 
         user = request.user
@@ -133,10 +133,10 @@ class OrderDetailsVeiw( viewsets.GenericViewSet):
                 'message': "You dont have access to perform to this view"
             }, status=status.HTTP_403_FORBIDDEN)
         
-        elif parameters:
+        elif query_params:
             queryset = queryset.filter(
-                Q(id__iexact=parameters)|
-                Q(slug__icontains=parameters)
+                Q(id__iexact=query_params)|
+                Q(slug__icontains=query_params)
             ).first()
         else:
             return Response({"message": "A field is required"})

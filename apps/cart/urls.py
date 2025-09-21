@@ -9,6 +9,6 @@ router.register(r'cart', CartView, basename="cart")
 
 urlpatterns = [
     path('', include(router.urls)),
-    path("add/<slug:product_slug>/<slug:cart_slug>/cart", CartItemview.as_view(), name="add_to_cart"),
-    path("editcart/<slug:slug>/", CartManagementView.as_view(), name="cart_edit")
+    path("add/<slug:product_slug>/<slug:cart_slug>/cart", CartItemview.as_view(), name="add_cart"),
+    path("editcart/<slug:slug>/", CartManagementView.as_view(), name="edit_cart")
 ]

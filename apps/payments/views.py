@@ -18,7 +18,7 @@ from django.utils import timezone
 
 
 def get_reference():
-    return str(uuid.uuid4()).replace("-", "")[:30]
+    return str(uuid.uuid4()).replace("-", "")[:20]
 
 
 class PaymentViewSet(viewsets.GenericViewSet):
