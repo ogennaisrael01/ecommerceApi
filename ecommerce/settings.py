@@ -34,7 +34,7 @@ DEBUG = os.getenv("DEBUG")
 ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://d6362340f032.ngrok-free.app",  # add your ngrok domain
+    "https://d6362340f032.ngrok-free.app", 
 ]
 # Application definition
 
